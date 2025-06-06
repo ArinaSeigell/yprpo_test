@@ -1,36 +1,16 @@
-name: Check Changed Files
+name: Simple changed files check
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [push, pull_request]
 
 jobs:
-  changed-files:
+  check-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Get list of changed files
-        id: changes
-        run: |
-          # Получаем список изменённых файлов между текущей веткой и базовой
-          git fetch origin main
-          # Получаем список файлов, изменённых в сравнении с базовой веткой
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
           
-          echo "$CHANGED_FILES"
-          
-          # Записываем список в вывод для дальнейшего использования
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Display changed files
+      - name: Get changed files
         run: |
-          echo "Изменённые файлы:"
-          echo "${{ steps.changes.outputs.changed_files }}"
+          echo "Changed files between commits:"
+          git diff --name-only ${{ github.event.before }} ${{ github.event.after }}
