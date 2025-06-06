@@ -183,4 +183,4 @@ if __name__ == "__main__":
                 sensor_workerr.join()
             break
         
-        time.sleep(1/window_imager.fps)
+        
