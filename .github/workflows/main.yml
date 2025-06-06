@@ -21,7 +21,7 @@ jobs:
           # Получаем список изменённых файлов между текущей веткой и базовой
           git fetch origin main
           # Получаем список файлов, изменённых в сравнении с базовой веткой
-          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
           
           echo "$CHANGED_FILES"
           
