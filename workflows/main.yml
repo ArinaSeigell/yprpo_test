@@ -1,0 +1,24 @@
+name: CI Tests
+
+on:  # Когда запускать:
+  push:          # При push в любую ветку
+  pull_request:  # И при создании PR
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  # Используем виртуальную машину Ubuntu
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # Копируем код репозитория
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Указываем версию Node.js
+
+      - name: Install dependencies
+        run: npm install      # Устанавливаем зависимости
+
+      - name: Run tests
+        run: npm test         # Запускаем тесты
