@@ -13,4 +13,4 @@ jobs:
       - name: Get changed files
         run: |
           echo "Changed files between commits:"
-          git diff --name-only ${{ github.event.before }} ${{ github.event.after }}
+          git diff -w --name-status ${{ github.event.before }} ${{ github.event.after }}
