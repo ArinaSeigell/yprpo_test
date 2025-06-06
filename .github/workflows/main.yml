@@ -1,94 +1,36 @@
-name: Verify Changed files
-description: Find files that were modified during workflow execution.
-author: jackton1
-inputs:
-  files:
-    description: 'File/Directory names to check for uncommited changes.'
-    required: false
-  files-separator:
-    description: 'Separator used to split the `files` input'
-    default: "\n"
-    required: false
-  separator:
-    description: 'Output string separator.'
-    required: false
-    default: " "
-  match-gitignore-files:
-    description: 'Indicates whether to match files in `.gitignore`'
-    default: "false"
-    required: true
-  read-gitignore:
-    description: 'Indicates whether to read `.gitignore`. The `.gitignore` file will be ignored if set to `false`. Overrides `match-gitignore-files`'
-    default: "false"
-    required: true
-  fail-if-changed:
-    description: 'Indicates whether to fail if files have changed.'
-    default: "false"
-    required: false
-  fail-if-unchanged:
-    description: 'Indicates whether to fail if no files have changed.'
-    default: "false"
-    required: false
-  fail-message:
-    description: 'Message to display when `fail-if-changed` or `fail-if-unchanged` is set to `true`.'
-    default: ""
-    required: false
-  safe_output:
-    description: "Apply sanitization to output filenames before being set as output."
-    required: false
-    default: "true"
-  path:
-    description: "Relative path under GITHUB_WORKSPACE to the repository"
-    required: false
-    default: '.'
-  quotepath:
-    description: "Use non-ASCII characters to match files and output the filenames completely verbatim by setting this to `false`"
-    default: "true"
-    required: false
+name: Check Changed Files
 
-outputs:
-  files_changed:
-    description: Boolean indicating that files have changed.
-    value: ${{ steps.verify-changed-files.outputs.files_changed }}
-  changed_files:
-    description: List of changed files
-    value: ${{ steps.verify-changed-files.outputs.changed_files }}
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-runs:
-  using: 'composite'
-  steps:
-    - name: Glob match
-      uses: tj-actions/glob@2deae40528141fc53131606d56b4e4ce2a486b29 # v22.0.2
-      if: inputs.files != ''
-      id: glob
-      with:
-        files: ${{ inputs.files }}
-        files-separator: ${{ inputs.files-separator }}
-        separator: "|"
-        match-directories: false
-        read-gitignore: ${{ inputs.read-gitignore }}
-        match-gitignore-files: ${{ inputs.match-gitignore-files }}
-        safe-output: ${{ inputs.safe_output }}
-      
-    - run: |
-        bash $GITHUB_ACTION_PATH/entrypoint.sh
-      id: verify-changed-files
-      shell: bash
-      env:
-        GITHUB_SERVER_URL: ${{ github.server_url }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        # INPUT_<VARIABLE_NAME> is not available in Composite run steps
-        # https://github.community/t/input-variable-name-is-not-available-in-composite-run-steps/127611
-        INPUT_FILES_PATTERN_FILE: ${{ steps.glob.outputs.paths-output-file }}
-        INPUT_SEPARATOR: ${{ inputs.separator }}
-        INPUT_MATCH_GITIGNORE_FILES: ${{ inputs.match-gitignore-files }}
-        INPUT_FAIL_IF_CHANGED: ${{ inputs.fail-if-changed }}
-        INPUT_FAIL_IF_UNCHANGED: ${{ inputs.fail-if-unchanged }}
-        INPUT_FAIL_MSG: ${{ inputs.fail-message || (inputs.fail-if-changed == 'true' && 'Files have changed.' || 'Files have not changed.') }}
-        INPUT_SAFE_OUTPUT: ${{ inputs.safe_output }}
-        INPUT_PATH: ${{ inputs.path }}
-        INPUT_QUOTEPATH: ${{ inputs.quotepath }}
-        
-branding:
-  icon: file-text
-  color: white
+jobs:
+  changed-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get list of changed files
+        id: changes
+        run: |
+          # Получаем список изменённых файлов между текущей веткой и базовой
+          git fetch origin main
+          # Получаем список файлов, изменённых в сравнении с базовой веткой
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          
+          echo "$CHANGED_FILES"
+          
+          # Записываем список в вывод для дальнейшего использования
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Display changed files
+        run: |
+          echo "Изменённые файлы:"
+          echo "${{ steps.changes.outputs.changed_files }}"
